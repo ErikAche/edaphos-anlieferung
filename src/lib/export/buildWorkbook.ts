@@ -14,12 +14,6 @@ export type ExportDelivery = {
   gruenschnitt_m3: number | null;
 };
 
-export type ExportSheetDefinition = {
-  districtId: string;
-  municipalityId: string | null;
-  sheetTitle: string;
-};
-
 const HEADERS = [
   "Bezirk",
   "Gemeinde",
@@ -33,20 +27,34 @@ const HEADERS = [
   "Unterschrieben",
 ];
 
-function sanitizeSheetName(name: string) {
-  return name.replace(/[[\]:\\/?*]/g, "").slice(0, 31);
-}
+export async function buildDeliveriesWorkbook(
+  deliveries: ExportDelivery[],
+): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "EDAPHOS Anlieferungserfassung";
+  workbook.created = new Date();
 
-function addSheet(
-  workbook: ExcelJS.Workbook,
-  name: string,
-  rows: ExportDelivery[],
-) {
-  const sheet = workbook.addWorksheet(sanitizeSheetName(name));
+  const sheet = workbook.addWorksheet("Anlieferungen");
   sheet.addRow(HEADERS).font = { bold: true };
   sheet.columns = HEADERS.map(() => ({ width: 18 }));
 
-  for (const row of rows) {
+  // Erste Zeile beim Scrollen fixiert lassen.
+  sheet.views = [{ state: "frozen", ySplit: 1 }];
+
+  const sorted = [...deliveries].sort((a, b) => {
+    const district = a.district_name.localeCompare(b.district_name, "de");
+    if (district !== 0) return district;
+    const municipality = a.municipality_display_name.localeCompare(
+      b.municipality_display_name,
+      "de",
+    );
+    if (municipality !== 0) return municipality;
+    return (
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  });
+
+  for (const row of sorted) {
     sheet.addRow([
       row.district_name,
       row.municipality_display_name,
@@ -61,27 +69,15 @@ function addSheet(
     ]);
   }
 
-  if (rows.length === 0) {
+  if (sorted.length === 0) {
     sheet.addRow(["Keine Anlieferungen in diesem Zeitraum."]);
   }
-}
 
-export async function buildDeliveriesWorkbook(
-  deliveries: ExportDelivery[],
-  sheetDefinitions: ExportSheetDefinition[],
-): Promise<Buffer> {
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = "EDAPHOS Anlieferungserfassung";
-  workbook.created = new Date();
-
-  for (const def of sheetDefinitions) {
-    const rows = deliveries.filter(
-      (d) =>
-        d.district_id === def.districtId &&
-        d.municipality_id === def.municipalityId,
-    );
-    addSheet(workbook, def.sheetTitle, rows);
-  }
+  // Filter-Dropdowns in der Kopfzeile ueber alle Spalten.
+  sheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: 1, column: HEADERS.length },
+  };
 
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);

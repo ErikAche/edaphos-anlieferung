@@ -104,16 +104,18 @@ export default async function AdminOverview() {
     <div className="flex flex-col gap-8">
       <h1 className="text-2xl font-bold text-edaphos-black">Übersicht</h1>
 
-      <StatsSection title="Heute" totals={today} />
-      <StatsSection title="Diese Woche" totals={week} />
-      <StatsSection title="Diesen Monat" totals={month} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_260px] lg:items-start">
+        <div className="flex flex-col gap-8">
+          <StatsSection title="Heute" totals={today} />
+          <StatsSection title="Diese Woche" totals={week} />
+          <StatsSection title="Diesen Monat" totals={month} />
+        </div>
 
-      <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-neutral-500">
-          Letzte {CHART_DAYS} Tage
-        </h2>
-        <div className="rounded-xl border border-neutral-200 bg-white p-6">
-          <DeliveryChart data={dailyData} />
+        <div className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-white p-4">
+          <h2 className="text-xs font-semibold text-neutral-500">
+            Letzte {CHART_DAYS} Tage
+          </h2>
+          <DeliveryChart data={dailyData} compact />
         </div>
       </div>
     </div>

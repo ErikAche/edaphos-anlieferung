@@ -1,6 +1,6 @@
 // Supabase Edge Function: monthly-export
 // Läuft am 1. jedes Monats (via pg_cron), erstellt eine Excel-Abrechnung
-// für den Vormonat (alle Bezirke/Gemeinden als Tabellenblätter) und
+// für den Vormonat (eine Tabelle, Kopfzeile fixiert, Filter aktiviert) und
 // verschickt sie per Resend an die in `settings` hinterlegte E-Mail-Adresse.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -19,10 +19,6 @@ const HEADERS = [
   "Grünschnitt (m³)",
   "Unterschrieben",
 ];
-
-function sanitizeSheetName(name: string) {
-  return name.replace(/[[\]:\\/?*]/g, "").slice(0, 31);
-}
 
 function previousMonthRange() {
   const now = new Date();
@@ -83,59 +79,66 @@ Deno.serve(async (_req: Request) => {
           .lt("created_at", to),
       ]);
 
+    const districtById = new Map((districts ?? []).map((d) => [d.id, d]));
+    const municipalityById = new Map((municipalities ?? []).map((m) => [m.id, m]));
+
+    const rows = (deliveries ?? []).map((d) => {
+      const municipality = d.municipality_id ? municipalityById.get(d.municipality_id) : undefined;
+      const municipalityName = municipality?.is_catch_all
+        ? (d.municipality_freetext ?? municipality.name)
+        : (municipality?.name ?? d.municipality_freetext ?? "");
+      return {
+        districtName: districtById.get(d.district_id)?.name ?? "Unbekannt",
+        municipalityName,
+        created_at: d.created_at,
+        first_name: d.first_name,
+        last_name: d.last_name,
+        street: d.street,
+        house_number: d.house_number,
+        strauchschnitt_m3: d.strauchschnitt_m3,
+        gruenschnitt_m3: d.gruenschnitt_m3,
+      };
+    });
+
+    rows.sort((a, b) => {
+      const district = a.districtName.localeCompare(b.districtName, "de");
+      if (district !== 0) return district;
+      const municipality = a.municipalityName.localeCompare(b.municipalityName, "de");
+      if (municipality !== 0) return municipality;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+
     const workbook = new ExcelJS.Workbook();
     workbook.creator = "EDAPHOS Anlieferungserfassung";
     workbook.created = new Date();
 
-    for (const district of districts ?? []) {
-      const districtMunicipalities = (municipalities ?? []).filter(
-        (m) => m.district_id === district.id,
-      );
+    const sheet = workbook.addWorksheet("Anlieferungen");
+    sheet.addRow(HEADERS).font = { bold: true };
+    sheet.columns = HEADERS.map(() => ({ width: 18 }));
+    sheet.views = [{ state: "frozen", ySplit: 1 }];
 
-      const sheetTargets =
-        districtMunicipalities.length > 0
-          ? districtMunicipalities.map((m) => ({ name: m.name, id: m.id as string | null }))
-          : [{ name: null, id: null }];
-
-      for (const target of sheetTargets) {
-        const rows = (deliveries ?? []).filter((d) => {
-          if (d.district_id !== district.id) return false;
-          if (target.id === null) return !d.municipality_id;
-          return d.municipality_id === target.id;
-        });
-
-        const sheetName = sanitizeSheetName(
-          target.name ? `${district.name} - ${target.name}` : district.name,
-        );
-        const sheet = workbook.addWorksheet(sheetName);
-        sheet.addRow(HEADERS).font = { bold: true };
-        sheet.columns = HEADERS.map(() => ({ width: 18 }));
-
-        for (const row of rows) {
-          const matchedMunicipality = (municipalities ?? []).find(
-            (m) => m.id === row.municipality_id,
-          );
-          const municipalityName = matchedMunicipality?.is_catch_all
-            ? (row.municipality_freetext ?? matchedMunicipality.name)
-            : (matchedMunicipality?.name ?? row.municipality_freetext ?? "");
-          sheet.addRow([
-            district.name,
-            municipalityName,
-            new Date(row.created_at).toLocaleString("de-AT"),
-            row.first_name,
-            row.last_name,
-            row.street,
-            row.house_number,
-            row.strauchschnitt_m3 ?? "",
-            row.gruenschnitt_m3 ?? "",
-            "Ja",
-          ]);
-        }
-        if (rows.length === 0) {
-          sheet.addRow(["Keine Anlieferungen in diesem Zeitraum."]);
-        }
-      }
+    for (const row of rows) {
+      sheet.addRow([
+        row.districtName,
+        row.municipalityName,
+        new Date(row.created_at).toLocaleString("de-AT"),
+        row.first_name,
+        row.last_name,
+        row.street,
+        row.house_number,
+        row.strauchschnitt_m3 ?? "",
+        row.gruenschnitt_m3 ?? "",
+        "Ja",
+      ]);
     }
+    if (rows.length === 0) {
+      sheet.addRow(["Keine Anlieferungen in diesem Zeitraum."]);
+    }
+
+    sheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: HEADERS.length },
+    };
 
     const buffer = await workbook.xlsx.writeBuffer();
     const base64 = btoa(

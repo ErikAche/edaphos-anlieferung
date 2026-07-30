@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import {
-  buildDeliveriesWorkbook,
-  type ExportSheetDefinition,
-} from "@/lib/export/buildWorkbook";
+import { buildDeliveriesWorkbook } from "@/lib/export/buildWorkbook";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -88,31 +85,7 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  const relevantDistricts = districtId
-    ? (districts ?? []).filter((d) => d.id === districtId)
-    : (districts ?? []);
-
-  const sheetDefinitions = relevantDistricts.flatMap(
-    (district): ExportSheetDefinition[] => {
-      const districtMunicipalities = (municipalities ?? []).filter(
-        (m) =>
-          m.district_id === district.id &&
-          (!municipalityId || m.id === municipalityId),
-      );
-      if (districtMunicipalities.length === 0) {
-        return [
-          { districtId: district.id, municipalityId: null, sheetTitle: district.name },
-        ];
-      }
-      return districtMunicipalities.map((m) => ({
-        districtId: district.id,
-        municipalityId: m.id,
-        sheetTitle: `${district.name} - ${m.name}`,
-      }));
-    },
-  );
-
-  const buffer = await buildDeliveriesWorkbook(deliveries, sheetDefinitions);
+  const buffer = await buildDeliveriesWorkbook(deliveries);
   const filename = `edaphos-anlieferungen_${from}_bis_${to}.xlsx`;
 
   return new NextResponse(new Uint8Array(buffer), {
