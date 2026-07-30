@@ -15,13 +15,15 @@ export type DistrictOption = {
 export async function getDistrictsWithMunicipalities(): Promise<
   DistrictOption[]
 > {
+  // Anon/Publishable-Keys sind bewusst oeffentlich (fuers Frontend gedacht) -
+  // unbedenklich, den vollen Wert zu Diagnosezwecken zu loggen.
   console.error(
     "getDistrictsWithMunicipalities env check:",
     JSON.stringify({
       SUPABASE_URL: process.env.SUPABASE_URL,
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasSupabaseAnonKey: Boolean(process.env.SUPABASE_ANON_KEY),
-      hasNextPublicAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     }),
   );
 
