@@ -164,18 +164,21 @@ export type Database = {
         Row: {
           district_id: string
           id: string
+          is_catch_all: boolean
           name: string
           sort_order: number
         }
         Insert: {
           district_id: string
           id?: string
+          is_catch_all?: boolean
           name: string
           sort_order?: number
         }
         Update: {
           district_id?: string
           id?: string
+          is_catch_all?: boolean
           name?: string
           sort_order?: number
         }

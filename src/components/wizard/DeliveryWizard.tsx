@@ -66,11 +66,17 @@ export default function DeliveryWizard({
     [districts, form.districtId],
   );
 
-  const municipalityLabel = selectedDistrict?.isCatchAll
-    ? form.municipalityFreetext
-    : selectedDistrict?.municipalities.find(
+  const selectedMunicipality = useMemo(
+    () =>
+      selectedDistrict?.municipalities.find(
         (m) => m.id === form.municipalityId,
-      )?.name;
+      ) ?? null,
+    [selectedDistrict, form.municipalityId],
+  );
+
+  const municipalityLabel = selectedMunicipality?.isCatchAll
+    ? form.municipalityFreetext
+    : selectedMunicipality?.name;
 
   const stepIndex = STEP_ORDER.indexOf(step === "erfolg" ? "review" : step);
 
@@ -121,10 +127,8 @@ export default function DeliveryWizard({
     setSubmitting(true);
     const result = await submitDelivery({
       districtId: form.districtId,
-      municipalityId: selectedDistrict?.isCatchAll
-        ? undefined
-        : form.municipalityId || undefined,
-      municipalityFreetext: selectedDistrict?.isCatchAll
+      municipalityId: form.municipalityId || undefined,
+      municipalityFreetext: selectedMunicipality?.isCatchAll
         ? form.municipalityFreetext
         : undefined,
       firstName: form.firstName,
@@ -201,36 +205,40 @@ export default function DeliveryWizard({
       {step === "gemeinde" && selectedDistrict && (
         <div className="flex flex-col gap-4">
           <StepHeading>In welcher Gemeinde?</StepHeading>
-          {selectedDistrict.isCatchAll ? (
+          <div className="flex flex-col gap-3">
+            {selectedDistrict.municipalities.map((m) => (
+              <BigChoiceButton
+                key={m.id}
+                label={m.name}
+                selected={form.municipalityId === m.id}
+                onClick={() =>
+                  setForm((f) => ({
+                    ...f,
+                    municipalityId: m.id,
+                    municipalityFreetext: "",
+                  }))
+                }
+              />
+            ))}
+          </div>
+          {selectedMunicipality?.isCatchAll && (
             <TextField
-              label="Gemeinde"
+              label="Wie heißt Ihre Gemeinde?"
               value={form.municipalityFreetext}
               onChange={(v) =>
                 setForm((f) => ({ ...f, municipalityFreetext: v }))
               }
               autoFocus
             />
-          ) : (
-            <div className="flex flex-col gap-3">
-              {selectedDistrict.municipalities.map((m) => (
-                <BigChoiceButton
-                  key={m.id}
-                  label={m.name}
-                  selected={form.municipalityId === m.id}
-                  onClick={() =>
-                    setForm((f) => ({ ...f, municipalityId: m.id }))
-                  }
-                />
-              ))}
-            </div>
           )}
           <div className="flex flex-col gap-3">
             <PrimaryButton
               onClick={goNext}
               disabled={
-                selectedDistrict.isCatchAll
+                !form.municipalityId ||
+                (selectedMunicipality?.isCatchAll
                   ? !form.municipalityFreetext.trim()
-                  : !form.municipalityId
+                  : false)
               }
             >
               Weiter

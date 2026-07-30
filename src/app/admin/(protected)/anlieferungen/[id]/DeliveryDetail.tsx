@@ -6,11 +6,13 @@ import {
   deleteDelivery,
   updateDelivery,
 } from "@/lib/actions/admin-deliveries";
+import { resolveMunicipalityDisplayName } from "@/lib/format";
+import { isSuspiciousDelivery } from "@/lib/flags";
 import type { Tables } from "@/lib/types/database";
 
 type Delivery = Tables<"deliveries"> & {
   districts: { name: string } | null;
-  municipalities: { name: string } | null;
+  municipalities: { name: string; is_catch_all: boolean } | null;
 };
 
 type AuditLogEntry = Tables<"audit_log">;
@@ -115,11 +117,10 @@ export default function DeliveryDetail({
               <Field label="Bezirk" value={delivery.districts?.name ?? "-"} />
               <Field
                 label="Gemeinde"
-                value={
-                  delivery.municipalities?.name ??
-                  delivery.municipality_freetext ??
-                  "-"
-                }
+                value={resolveMunicipalityDisplayName(
+                  delivery.municipalities,
+                  delivery.municipality_freetext,
+                )}
               />
               <Field
                 label="Name"
@@ -136,6 +137,7 @@ export default function DeliveryDetail({
                     ? `${delivery.strauchschnitt_m3} m³`
                     : "-"
                 }
+                flagged={isSuspiciousDelivery(delivery.strauchschnitt_m3, null)}
               />
               <Field
                 label="Grünschnitt"
@@ -144,6 +146,7 @@ export default function DeliveryDetail({
                     ? `${delivery.gruenschnitt_m3} m³`
                     : "-"
                 }
+                flagged={isSuspiciousDelivery(null, delivery.gruenschnitt_m3)}
               />
             </dl>
           ) : (
@@ -252,11 +255,29 @@ export default function DeliveryDetail({
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({
+  label,
+  value,
+  flagged,
+}: {
+  label: string;
+  value: string;
+  flagged?: boolean;
+}) {
   return (
     <div>
       <dt className="text-neutral-500">{label}</dt>
-      <dd className="font-medium text-edaphos-black">{value}</dd>
+      <dd className="flex items-center gap-2 font-medium text-edaphos-black">
+        {value}
+        {flagged && (
+          <span
+            title="Ungewöhnlich hohe Menge – bitte prüfen"
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white"
+          >
+            !
+          </span>
+        )}
+      </dd>
     </div>
   );
 }

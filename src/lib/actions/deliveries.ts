@@ -29,6 +29,28 @@ export async function submitDelivery(
   const data = parsed.data;
   const supabase = await createClient();
 
+  const { data: municipality, error: municipalityError } = await supabase
+    .from("municipalities")
+    .select("id, district_id, is_catch_all")
+    .eq("id", data.municipalityId)
+    .single();
+
+  if (
+    municipalityError ||
+    !municipality ||
+    municipality.district_id !== data.districtId
+  ) {
+    return { success: false, error: "Ungültige Gemeinde für den gewählten Bezirk." };
+  }
+
+  if (municipality.is_catch_all && !data.municipalityFreetext?.trim()) {
+    return { success: false, error: "Bitte den Namen Ihrer Gemeinde eintragen." };
+  }
+
+  const municipalityFreetext = municipality.is_catch_all
+    ? (data.municipalityFreetext?.trim() ?? null)
+    : null;
+
   const signatureBuffer = dataUrlToBuffer(data.signatureDataUrl);
   const signaturePath = `${data.districtId}/${randomUUID()}.png`;
 
@@ -45,8 +67,8 @@ export async function submitDelivery(
 
   const { error: insertError } = await supabase.from("deliveries").insert({
     district_id: data.districtId,
-    municipality_id: data.municipalityId ?? null,
-    municipality_freetext: data.municipalityFreetext ?? null,
+    municipality_id: data.municipalityId,
+    municipality_freetext: municipalityFreetext,
     first_name: data.firstName,
     last_name: data.lastName,
     street: data.street,

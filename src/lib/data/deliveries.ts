@@ -14,7 +14,7 @@ export async function listDeliveries(filters: DeliveryFilters = {}) {
   let query = supabase
     .from("deliveries")
     .select(
-      "id, created_at, district_id, municipality_id, municipality_freetext, first_name, last_name, street, house_number, strauchschnitt_m3, gruenschnitt_m3, deleted_at, districts(name), municipalities(name)",
+      "id, created_at, district_id, municipality_id, municipality_freetext, first_name, last_name, street, house_number, strauchschnitt_m3, gruenschnitt_m3, deleted_at, districts(name), municipalities(name, is_catch_all)",
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -40,7 +40,7 @@ export async function getDelivery(id: string) {
   const { data, error } = await supabase
     .from("deliveries")
     .select(
-      "*, districts(name), municipalities(name)",
+      "*, districts(name), municipalities(name, is_catch_all)",
     )
     .eq("id", id)
     .single();

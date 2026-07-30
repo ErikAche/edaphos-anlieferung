@@ -71,7 +71,7 @@ Deno.serve(async (_req: Request) => {
         supabase.from("districts").select("id, name, sort_order").order("sort_order"),
         supabase
           .from("municipalities")
-          .select("id, name, district_id, sort_order")
+          .select("id, name, district_id, sort_order, is_catch_all")
           .order("sort_order"),
         supabase
           .from("deliveries")
@@ -112,10 +112,12 @@ Deno.serve(async (_req: Request) => {
         sheet.columns = HEADERS.map(() => ({ width: 18 }));
 
         for (const row of rows) {
-          const municipalityName =
-            (municipalities ?? []).find((m) => m.id === row.municipality_id)?.name ??
-            row.municipality_freetext ??
-            "";
+          const matchedMunicipality = (municipalities ?? []).find(
+            (m) => m.id === row.municipality_id,
+          );
+          const municipalityName = matchedMunicipality?.is_catch_all
+            ? (row.municipality_freetext ?? matchedMunicipality.name)
+            : (matchedMunicipality?.name ?? row.municipality_freetext ?? "");
           sheet.addRow([
             district.name,
             municipalityName,
@@ -147,7 +149,7 @@ Deno.serve(async (_req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "EDAPHOS Anlieferung <onboarding@resend.dev>",
+        from: "EDAPHOS Anlieferung <office@anlieferung-edaphos.at>",
         to: [billingEmail],
         subject: `EDAPHOS Monatsabrechnung – ${label}`,
         text: `Im Anhang die Anlieferungs-Abrechnung für ${label}.`,

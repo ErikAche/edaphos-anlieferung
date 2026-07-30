@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     .order("sort_order");
   const { data: municipalities } = await supabase
     .from("municipalities")
-    .select("id, name, district_id, sort_order")
+    .select("id, name, district_id, sort_order, is_catch_all")
     .order("sort_order");
 
   let query = supabase
@@ -65,20 +65,28 @@ export async function GET(request: NextRequest) {
     (municipalities ?? []).map((m) => [m.id, m]),
   );
 
-  const deliveries = (rawDeliveries ?? []).map((d) => ({
-    created_at: d.created_at,
-    district_name: districtById.get(d.district_id)?.name ?? "Unbekannt",
-    municipality_name: d.municipality_id
-      ? (municipalityById.get(d.municipality_id)?.name ?? null)
-      : null,
-    municipality_freetext: d.municipality_freetext,
-    first_name: d.first_name,
-    last_name: d.last_name,
-    street: d.street,
-    house_number: d.house_number,
-    strauchschnitt_m3: d.strauchschnitt_m3,
-    gruenschnitt_m3: d.gruenschnitt_m3,
-  }));
+  const deliveries = (rawDeliveries ?? []).map((d) => {
+    const municipality = d.municipality_id
+      ? municipalityById.get(d.municipality_id)
+      : undefined;
+    const displayName = municipality?.is_catch_all
+      ? (d.municipality_freetext ?? municipality.name)
+      : (municipality?.name ?? d.municipality_freetext ?? "");
+
+    return {
+      created_at: d.created_at,
+      district_id: d.district_id,
+      district_name: districtById.get(d.district_id)?.name ?? "Unbekannt",
+      municipality_id: d.municipality_id,
+      municipality_display_name: displayName,
+      first_name: d.first_name,
+      last_name: d.last_name,
+      street: d.street,
+      house_number: d.house_number,
+      strauchschnitt_m3: d.strauchschnitt_m3,
+      gruenschnitt_m3: d.gruenschnitt_m3,
+    };
+  });
 
   const relevantDistricts = districtId
     ? (districts ?? []).filter((d) => d.id === districtId)
@@ -92,11 +100,14 @@ export async function GET(request: NextRequest) {
           (!municipalityId || m.id === municipalityId),
       );
       if (districtMunicipalities.length === 0) {
-        return [{ districtName: district.name, municipalityName: null }];
+        return [
+          { districtId: district.id, municipalityId: null, sheetTitle: district.name },
+        ];
       }
       return districtMunicipalities.map((m) => ({
-        districtName: district.name,
-        municipalityName: m.name,
+        districtId: district.id,
+        municipalityId: m.id,
+        sheetTitle: `${district.name} - ${m.name}`,
       }));
     },
   );

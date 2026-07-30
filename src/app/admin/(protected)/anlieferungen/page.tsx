@@ -1,16 +1,7 @@
 import Link from "next/link";
 import { listDeliveries } from "@/lib/data/deliveries";
 import { getDistrictsWithMunicipalities } from "@/lib/data/districts";
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("de-AT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import AnlieferungenTable from "./AnlieferungenTable";
 
 export default async function AnlieferungenPage({
   searchParams,
@@ -84,57 +75,7 @@ export default async function AnlieferungenPage({
         </Link>
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-        <table className="w-full min-w-[720px] text-sm">
-          <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500">
-            <tr>
-              <th className="px-4 py-2">Datum</th>
-              <th className="px-4 py-2">Bezirk</th>
-              <th className="px-4 py-2">Gemeinde</th>
-              <th className="px-4 py-2">Name</th>
-              <th className="px-4 py-2">Strauchschnitt</th>
-              <th className="px-4 py-2">Grünschnitt</th>
-            </tr>
-          </thead>
-          <tbody>
-            {deliveries?.map((d) => (
-              <tr
-                key={d.id}
-                className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
-              >
-                <td className="px-4 py-2">
-                  <Link
-                    href={`/admin/anlieferungen/${d.id}`}
-                    className="text-edaphos-green hover:underline"
-                  >
-                    {formatDate(d.created_at)}
-                  </Link>
-                </td>
-                <td className="px-4 py-2">{d.districts?.name}</td>
-                <td className="px-4 py-2">
-                  {d.municipalities?.name ?? d.municipality_freetext}
-                </td>
-                <td className="px-4 py-2">
-                  {d.first_name} {d.last_name}
-                </td>
-                <td className="px-4 py-2">
-                  {d.strauchschnitt_m3 ? `${d.strauchschnitt_m3} m³` : "-"}
-                </td>
-                <td className="px-4 py-2">
-                  {d.gruenschnitt_m3 ? `${d.gruenschnitt_m3} m³` : "-"}
-                </td>
-              </tr>
-            ))}
-            {deliveries?.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-neutral-400">
-                  Keine Anlieferungen gefunden.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <AnlieferungenTable deliveries={deliveries ?? []} />
     </div>
   );
 }

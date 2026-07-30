@@ -2,9 +2,10 @@ import ExcelJS from "exceljs";
 
 export type ExportDelivery = {
   created_at: string;
+  district_id: string;
   district_name: string;
-  municipality_name: string | null;
-  municipality_freetext: string | null;
+  municipality_id: string | null;
+  municipality_display_name: string;
   first_name: string;
   last_name: string;
   street: string;
@@ -14,8 +15,9 @@ export type ExportDelivery = {
 };
 
 export type ExportSheetDefinition = {
-  districtName: string;
-  municipalityName: string | null; // null = "Übrige Gemeinden" Sammel-Sheet
+  districtId: string;
+  municipalityId: string | null;
+  sheetTitle: string;
 };
 
 const HEADERS = [
@@ -47,7 +49,7 @@ function addSheet(
   for (const row of rows) {
     sheet.addRow([
       row.district_name,
-      row.municipality_name ?? row.municipality_freetext ?? "",
+      row.municipality_display_name,
       new Date(row.created_at).toLocaleString("de-AT"),
       row.first_name,
       row.last_name,
@@ -73,17 +75,12 @@ export async function buildDeliveriesWorkbook(
   workbook.created = new Date();
 
   for (const def of sheetDefinitions) {
-    const rows = deliveries.filter((d) => {
-      if (d.district_name !== def.districtName) return false;
-      if (def.municipalityName === null) {
-        return !d.municipality_name; // freitext / Übrige Gemeinden
-      }
-      return d.municipality_name === def.municipalityName;
-    });
-    const sheetName = def.municipalityName
-      ? `${def.districtName} - ${def.municipalityName}`
-      : def.districtName;
-    addSheet(workbook, sheetName, rows);
+    const rows = deliveries.filter(
+      (d) =>
+        d.district_id === def.districtId &&
+        d.municipality_id === def.municipalityId,
+    );
+    addSheet(workbook, def.sheetTitle, rows);
   }
 
   const buffer = await workbook.xlsx.writeBuffer();

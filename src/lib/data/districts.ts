@@ -3,12 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 export type MunicipalityOption = {
   id: string;
   name: string;
+  isCatchAll: boolean;
 };
 
 export type DistrictOption = {
   id: string;
   name: string;
-  isCatchAll: boolean;
   municipalities: MunicipalityOption[];
 };
 
@@ -19,7 +19,7 @@ export async function getDistrictsWithMunicipalities(): Promise<
 
   const { data: districts, error: districtsError } = await supabase
     .from("districts")
-    .select("id, name, is_catch_all, sort_order")
+    .select("id, name, sort_order")
     .order("sort_order", { ascending: true });
 
   if (districtsError || !districts) {
@@ -28,7 +28,7 @@ export async function getDistrictsWithMunicipalities(): Promise<
 
   const { data: municipalities, error: municipalitiesError } = await supabase
     .from("municipalities")
-    .select("id, name, district_id, sort_order")
+    .select("id, name, district_id, sort_order, is_catch_all")
     .order("sort_order", { ascending: true });
 
   if (municipalitiesError || !municipalities) {
@@ -38,9 +38,8 @@ export async function getDistrictsWithMunicipalities(): Promise<
   return districts.map((district) => ({
     id: district.id,
     name: district.name,
-    isCatchAll: district.is_catch_all,
     municipalities: municipalities
       .filter((m) => m.district_id === district.id)
-      .map((m) => ({ id: m.id, name: m.name })),
+      .map((m) => ({ id: m.id, name: m.name, isCatchAll: m.is_catch_all })),
   }));
 }

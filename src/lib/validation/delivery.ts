@@ -3,7 +3,7 @@ import { z } from "zod";
 export const deliverySchema = z
   .object({
     districtId: z.string().uuid({ message: "Bitte einen Bezirk wählen." }),
-    municipalityId: z.string().uuid().optional(),
+    municipalityId: z.string().uuid({ message: "Bitte eine Gemeinde wählen." }),
     municipalityFreetext: z.string().trim().max(120).optional(),
     firstName: z.string().trim().min(1, "Vorname ist erforderlich.").max(120),
     lastName: z.string().trim().min(1, "Nachname ist erforderlich.").max(120),
@@ -30,13 +30,6 @@ export const deliverySchema = z
     {
       message: "Bitte mindestens eine Menge (Strauch- oder Grünschnitt) angeben.",
       path: ["strauchschnittM3"],
-    },
-  )
-  .refine(
-    (data) => Boolean(data.municipalityId) || Boolean(data.municipalityFreetext),
-    {
-      message: "Bitte eine Gemeinde wählen oder eintragen.",
-      path: ["municipalityId"],
     },
   );
 

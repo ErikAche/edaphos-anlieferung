@@ -1,37 +1,73 @@
 import { createClient } from "@/lib/supabase/server";
 
+type Totals = { count: number; strauch: number; gruen: number };
+
+async function getTotalsSince(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  since: string,
+): Promise<Totals> {
+  const { data } = await supabase
+    .from("deliveries")
+    .select("strauchschnitt_m3, gruenschnitt_m3")
+    .is("deleted_at", null)
+    .gte("created_at", since);
+
+  const rows = data ?? [];
+  return {
+    count: rows.length,
+    strauch: rows.reduce((sum, d) => sum + (Number(d.strauchschnitt_m3) || 0), 0),
+    gruen: rows.reduce((sum, d) => sum + (Number(d.gruenschnitt_m3) || 0), 0),
+  };
+}
+
 export default async function AdminOverview() {
   const supabase = await createClient();
 
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const dayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).toISOString();
 
-  const { data, error } = await supabase
-    .from("deliveries")
-    .select("strauchschnitt_m3, gruenschnitt_m3")
-    .is("deleted_at", null)
-    .gte("created_at", monthStart);
+  const daysSinceMonday = (now.getDay() + 6) % 7;
+  const weekStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - daysSinceMonday,
+  ).toISOString();
 
-  const count = data?.length ?? 0;
-  const strauch = (data ?? []).reduce(
-    (sum, d) => sum + (Number(d.strauchschnitt_m3) || 0),
-    0,
-  );
-  const gruen = (data ?? []).reduce(
-    (sum, d) => sum + (Number(d.gruenschnitt_m3) || 0),
-    0,
-  );
+  const monthStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1,
+  ).toISOString();
+
+  const [today, week, month] = await Promise.all([
+    getTotalsSince(supabase, dayStart),
+    getTotalsSince(supabase, weekStart),
+    getTotalsSince(supabase, monthStart),
+  ]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <h1 className="text-2xl font-bold text-edaphos-black">Übersicht</h1>
-      {error && (
-        <p className="text-sm text-red-600">Statistik konnte nicht geladen werden.</p>
-      )}
+
+      <StatsSection title="Heute" totals={today} />
+      <StatsSection title="Diese Woche" totals={week} />
+      <StatsSection title="Diesen Monat" totals={month} />
+    </div>
+  );
+}
+
+function StatsSection({ title, totals }: { title: string; totals: Totals }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="text-sm font-semibold text-neutral-500">{title}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Anlieferungen diesen Monat" value={count.toString()} />
-        <StatCard label="Strauchschnitt (m³)" value={strauch.toFixed(2)} />
-        <StatCard label="Grünschnitt (m³)" value={gruen.toFixed(2)} />
+        <StatCard label="Anlieferungen" value={totals.count.toString()} />
+        <StatCard label="Strauchschnitt (m³)" value={totals.strauch.toFixed(2)} />
+        <StatCard label="Grünschnitt (m³)" value={totals.gruen.toFixed(2)} />
       </div>
     </div>
   );
