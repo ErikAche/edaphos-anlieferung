@@ -1,55 +1,21 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import DeliveryChart, { type DailyPoint } from "./DeliveryChart";
+import BezirkGemeindeChart, { type BreakdownRow } from "./BezirkGemeindeChart";
 
 type Totals = { count: number; strauch: number; gruen: number };
+type Period = "month" | "quarter" | "year";
 
-const CHART_DAYS = 14;
+const PERIOD_LABELS: Record<Period, string> = {
+  month: "Diesen Monat",
+  quarter: "Dieses Quartal",
+  year: "Dieses Jahr",
+};
 
-function localDateKey(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-async function getLastNDays(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  days: number,
-): Promise<DailyPoint[]> {
-  const now = new Date();
-  const rangeStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() - (days - 1),
-  );
-
-  const { data } = await supabase
-    .from("deliveries")
-    .select("created_at, strauchschnitt_m3, gruenschnitt_m3")
-    .is("deleted_at", null)
-    .gte("created_at", rangeStart.toISOString());
-
-  const buckets = new Map<string, { strauch: number; gruen: number }>();
-  for (let i = 0; i < days; i++) {
-    const d = new Date(rangeStart);
-    d.setDate(rangeStart.getDate() + i);
-    buckets.set(localDateKey(d), { strauch: 0, gruen: 0 });
-  }
-
-  for (const row of data ?? []) {
-    const key = localDateKey(new Date(row.created_at));
-    const bucket = buckets.get(key);
-    if (!bucket) continue;
-    bucket.strauch += Number(row.strauchschnitt_m3) || 0;
-    bucket.gruen += Number(row.gruenschnitt_m3) || 0;
-  }
-
-  return Array.from(buckets.entries()).map(([date, totals]) => {
-    const d = new Date(date);
-    return {
-      date,
-      label: d.toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" }),
-      strauch: Math.round(totals.strauch * 100) / 100,
-      gruen: Math.round(totals.gruen * 100) / 100,
-    };
-  });
+function getPeriodStart(period: Period, now: Date): Date {
+  if (period === "month") return new Date(now.getFullYear(), now.getMonth(), 1);
+  if (period === "year") return new Date(now.getFullYear(), 0, 1);
+  const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+  return new Date(now.getFullYear(), quarterStartMonth, 1);
 }
 
 async function getTotalsSince(
@@ -70,8 +36,65 @@ async function getTotalsSince(
   };
 }
 
-export default async function AdminOverview() {
+async function getDistrictBreakdown(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  since: string,
+): Promise<BreakdownRow[]> {
+  const [{ data: districts }, { data: municipalities }, { data: deliveries }] =
+    await Promise.all([
+      supabase.from("districts").select("id, name, sort_order").order("sort_order"),
+      supabase
+        .from("municipalities")
+        .select("id, name, district_id, sort_order")
+        .order("sort_order"),
+      supabase
+        .from("deliveries")
+        .select("district_id, municipality_id, strauchschnitt_m3, gruenschnitt_m3")
+        .is("deleted_at", null)
+        .gte("created_at", since),
+    ]);
+
+  const districtById = new Map((districts ?? []).map((d) => [d.id, d]));
+
+  const totalsByKey = new Map<string, { strauch: number; gruen: number }>();
+  for (const d of deliveries ?? []) {
+    const key = `${d.district_id}|${d.municipality_id}`;
+    const t = totalsByKey.get(key) ?? { strauch: 0, gruen: 0 };
+    t.strauch += Number(d.strauchschnitt_m3) || 0;
+    t.gruen += Number(d.gruenschnitt_m3) || 0;
+    totalsByKey.set(key, t);
+  }
+
+  const rows = (municipalities ?? [])
+    .map((m) => {
+      const t = totalsByKey.get(`${m.district_id}|${m.id}`);
+      if (!t) return null;
+      return {
+        label: `${districtById.get(m.district_id)?.name ?? ""} – ${m.name}`,
+        strauch: Math.round(t.strauch * 100) / 100,
+        gruen: Math.round(t.gruen * 100) / 100,
+        districtSort: districtById.get(m.district_id)?.sort_order ?? 0,
+        municipalitySort: m.sort_order,
+      };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null)
+    .sort(
+      (a, b) =>
+        a.districtSort - b.districtSort || a.municipalitySort - b.municipalitySort,
+    );
+
+  return rows.map(({ label, strauch, gruen }) => ({ label, strauch, gruen }));
+}
+
+export default async function AdminOverview({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>;
+}) {
   const supabase = await createClient();
+  const params = await searchParams;
+  const period: Period =
+    params.period === "month" || params.period === "year" ? params.period : "quarter";
 
   const now = new Date();
   const dayStart = new Date(
@@ -93,29 +116,46 @@ export default async function AdminOverview() {
     1,
   ).toISOString();
 
-  const [today, week, month, dailyData] = await Promise.all([
+  const periodStart = getPeriodStart(period, now).toISOString();
+
+  const [today, week, month, breakdown] = await Promise.all([
     getTotalsSince(supabase, dayStart),
     getTotalsSince(supabase, weekStart),
     getTotalsSince(supabase, monthStart),
-    getLastNDays(supabase, CHART_DAYS),
+    getDistrictBreakdown(supabase, periodStart),
   ]);
 
   return (
     <div className="flex flex-col gap-8">
       <h1 className="text-2xl font-bold text-edaphos-black">Übersicht</h1>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_260px] lg:items-start">
-        <div className="flex flex-col gap-8">
-          <StatsSection title="Heute" totals={today} />
-          <StatsSection title="Diese Woche" totals={week} />
-          <StatsSection title="Diesen Monat" totals={month} />
-        </div>
+      <StatsSection title="Heute" totals={today} />
+      <StatsSection title="Diese Woche" totals={week} />
+      <StatsSection title="Diesen Monat" totals={month} />
 
-        <div className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-white p-4">
-          <h2 className="text-xs font-semibold text-neutral-500">
-            Letzte {CHART_DAYS} Tage
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-neutral-500">
+            Anlieferungen pro Bezirk &amp; Gemeinde
           </h2>
-          <DeliveryChart data={dailyData} compact />
+          <div className="flex gap-2">
+            {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+              <Link
+                key={p}
+                href={`/admin?period=${p}`}
+                className={`rounded-lg px-3 py-1 text-xs font-semibold ${
+                  p === period
+                    ? "bg-edaphos-green text-white"
+                    : "border border-neutral-300 text-neutral-600 hover:border-edaphos-green"
+                }`}
+              >
+                {PERIOD_LABELS[p]}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl border border-neutral-200 bg-white p-6">
+          <BezirkGemeindeChart rows={breakdown} />
         </div>
       </div>
     </div>
