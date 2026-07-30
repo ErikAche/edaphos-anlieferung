@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import BreakdownBarChart, { type BreakdownRow } from "./BreakdownBarChart";
+import {
+  startOfDayVienna,
+  startOfMonthVienna,
+  startOfQuarterVienna,
+  startOfWeekVienna,
+  startOfYearVienna,
+} from "@/lib/timezone";
 
 const TOP_CUSTOMERS_LIMIT = 10;
 
@@ -14,10 +21,9 @@ const PERIOD_LABELS: Record<Period, string> = {
 };
 
 function getPeriodStart(period: Period, now: Date): Date {
-  if (period === "month") return new Date(now.getFullYear(), now.getMonth(), 1);
-  if (period === "year") return new Date(now.getFullYear(), 0, 1);
-  const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
-  return new Date(now.getFullYear(), quarterStartMonth, 1);
+  if (period === "month") return startOfMonthVienna(now);
+  if (period === "year") return startOfYearVienna(now);
+  return startOfQuarterVienna(now);
 }
 
 async function getTotalsSince(
@@ -139,25 +145,9 @@ export default async function AdminOverview({
     params.period === "month" || params.period === "year" ? params.period : "quarter";
 
   const now = new Date();
-  const dayStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).toISOString();
-
-  const daysSinceMonday = (now.getDay() + 6) % 7;
-  const weekStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() - daysSinceMonday,
-  ).toISOString();
-
-  const monthStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    1,
-  ).toISOString();
-
+  const dayStart = startOfDayVienna(now).toISOString();
+  const weekStart = startOfWeekVienna(now).toISOString();
+  const monthStart = startOfMonthVienna(now).toISOString();
   const periodStart = getPeriodStart(period, now).toISOString();
 
   const [today, week, month, breakdown, topCustomers] = await Promise.all([
