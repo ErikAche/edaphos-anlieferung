@@ -12,7 +12,7 @@ const SERIES_1 = "#2a78d6"; // Strauchschnitt (kategorial Slot 1, validierte Pal
 const SERIES_2 = "#eb6834"; // Gruenschnitt (kategorial Slot 2)
 const BAR_HEIGHT = 18;
 
-export default function BezirkGemeindeChart({ rows }: { rows: BreakdownRow[] }) {
+export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
   const [hovered, setHovered] = useState<string | null>(null);
 
   if (rows.length === 0) {

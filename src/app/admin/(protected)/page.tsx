@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import BezirkGemeindeChart, { type BreakdownRow } from "./BezirkGemeindeChart";
+import BreakdownBarChart, { type BreakdownRow } from "./BreakdownBarChart";
+
+const TOP_CUSTOMERS_LIMIT = 10;
 
 type Totals = { count: number; strauch: number; gruen: number };
 type Period = "month" | "quarter" | "year";
@@ -86,6 +88,46 @@ async function getDistrictBreakdown(
   return rows.map(({ label, strauch, gruen }) => ({ label, strauch, gruen }));
 }
 
+async function getTopCustomers(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  since: string,
+  limit: number,
+): Promise<BreakdownRow[]> {
+  const { data } = await supabase
+    .from("deliveries")
+    .select("first_name, last_name, street, house_number, strauchschnitt_m3, gruenschnitt_m3")
+    .is("deleted_at", null)
+    .gte("created_at", since);
+
+  const totalsByKey = new Map<
+    string,
+    { label: string; strauch: number; gruen: number }
+  >();
+
+  for (const d of data ?? []) {
+    const key = [d.first_name, d.last_name, d.street, d.house_number]
+      .map((v) => v.trim().toLowerCase())
+      .join("|");
+    const existing = totalsByKey.get(key) ?? {
+      label: `${d.first_name} ${d.last_name}`,
+      strauch: 0,
+      gruen: 0,
+    };
+    existing.strauch += Number(d.strauchschnitt_m3) || 0;
+    existing.gruen += Number(d.gruenschnitt_m3) || 0;
+    totalsByKey.set(key, existing);
+  }
+
+  return Array.from(totalsByKey.values())
+    .map((r) => ({
+      label: r.label,
+      strauch: Math.round(r.strauch * 100) / 100,
+      gruen: Math.round(r.gruen * 100) / 100,
+    }))
+    .sort((a, b) => b.strauch + b.gruen - (a.strauch + a.gruen))
+    .slice(0, limit);
+}
+
 export default async function AdminOverview({
   searchParams,
 }: {
@@ -118,11 +160,12 @@ export default async function AdminOverview({
 
   const periodStart = getPeriodStart(period, now).toISOString();
 
-  const [today, week, month, breakdown] = await Promise.all([
+  const [today, week, month, breakdown, topCustomers] = await Promise.all([
     getTotalsSince(supabase, dayStart),
     getTotalsSince(supabase, weekStart),
     getTotalsSince(supabase, monthStart),
     getDistrictBreakdown(supabase, periodStart),
+    getTopCustomers(supabase, periodStart, TOP_CUSTOMERS_LIMIT),
   ]);
 
   return (
@@ -133,30 +176,52 @@ export default async function AdminOverview({
       <StatsSection title="Diese Woche" totals={week} />
       <StatsSection title="Diesen Monat" totals={month} />
 
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-neutral-500">
-            Anlieferungen pro Bezirk &amp; Gemeinde
-          </h2>
-          <div className="flex gap-2">
-            {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
-              <Link
-                key={p}
-                href={`/admin?period=${p}`}
-                className={`rounded-lg px-3 py-1 text-xs font-semibold ${
-                  p === period
-                    ? "bg-edaphos-green text-white"
-                    : "border border-neutral-300 text-neutral-600 hover:border-edaphos-green"
-                }`}
-              >
-                {PERIOD_LABELS[p]}
-              </Link>
-            ))}
-          </div>
+      <BreakdownSection
+        title="Anlieferungen pro Bezirk & Gemeinde"
+        period={period}
+        rows={breakdown}
+      />
+
+      <BreakdownSection
+        title={`Meiste Anlieferungen (Top ${TOP_CUSTOMERS_LIMIT})`}
+        period={period}
+        rows={topCustomers}
+      />
+    </div>
+  );
+}
+
+function BreakdownSection({
+  title,
+  period,
+  rows,
+}: {
+  title: string;
+  period: Period;
+  rows: BreakdownRow[];
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-neutral-500">{title}</h2>
+        <div className="flex gap-2">
+          {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+            <Link
+              key={p}
+              href={`/admin?period=${p}`}
+              className={`rounded-lg px-3 py-1 text-xs font-semibold ${
+                p === period
+                  ? "bg-edaphos-green text-white"
+                  : "border border-neutral-300 text-neutral-600 hover:border-edaphos-green"
+              }`}
+            >
+              {PERIOD_LABELS[p]}
+            </Link>
+          ))}
         </div>
-        <div className="rounded-xl border border-neutral-200 bg-white p-6">
-          <BezirkGemeindeChart rows={breakdown} />
-        </div>
+      </div>
+      <div className="rounded-xl border border-neutral-200 bg-white p-6">
+        <BreakdownBarChart rows={rows} />
       </div>
     </div>
   );
