@@ -20,6 +20,18 @@ const HEADERS = [
   "Unterschrieben",
 ];
 
+// Verhindert Excel-Formel-Injection: Werte, die mit =, +, -, @ beginnen,
+// koennten von Excel als Formel statt als Text interpretiert werden.
+const FORMULA_TRIGGER_CHARS = ["=", "+", "-", "@"];
+
+function sanitizeForSpreadsheet(value: string): string {
+  const trimmed = value.trim();
+  if (FORMULA_TRIGGER_CHARS.some((c) => trimmed.startsWith(c))) {
+    return `'${value}`;
+  }
+  return value;
+}
+
 function previousMonthRange() {
   const now = new Date();
   const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
@@ -120,12 +132,12 @@ Deno.serve(async (_req: Request) => {
     for (const row of rows) {
       sheet.addRow([
         row.districtName,
-        row.municipalityName,
+        sanitizeForSpreadsheet(row.municipalityName),
         new Date(row.created_at).toLocaleString("de-AT"),
-        row.first_name,
-        row.last_name,
-        row.street,
-        row.house_number,
+        sanitizeForSpreadsheet(row.first_name),
+        sanitizeForSpreadsheet(row.last_name),
+        sanitizeForSpreadsheet(row.street),
+        sanitizeForSpreadsheet(row.house_number),
         row.strauchschnitt_m3 ?? "",
         row.gruenschnitt_m3 ?? "",
         "Ja",
