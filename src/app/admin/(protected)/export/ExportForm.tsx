@@ -3,13 +3,20 @@
 import { useMemo, useState } from "react";
 import type { DistrictOption } from "@/lib/data/districts";
 
+function toLocalDateString(d: Date) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateString(new Date());
 }
 
 function firstOfMonth() {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  return toLocalDateString(new Date(d.getFullYear(), d.getMonth(), 1));
 }
 
 export default function ExportForm({
