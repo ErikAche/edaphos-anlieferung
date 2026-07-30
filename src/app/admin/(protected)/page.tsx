@@ -1,6 +1,56 @@
 import { createClient } from "@/lib/supabase/server";
+import DeliveryChart, { type DailyPoint } from "./DeliveryChart";
 
 type Totals = { count: number; strauch: number; gruen: number };
+
+const CHART_DAYS = 14;
+
+function localDateKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+async function getLastNDays(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  days: number,
+): Promise<DailyPoint[]> {
+  const now = new Date();
+  const rangeStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - (days - 1),
+  );
+
+  const { data } = await supabase
+    .from("deliveries")
+    .select("created_at, strauchschnitt_m3, gruenschnitt_m3")
+    .is("deleted_at", null)
+    .gte("created_at", rangeStart.toISOString());
+
+  const buckets = new Map<string, { strauch: number; gruen: number }>();
+  for (let i = 0; i < days; i++) {
+    const d = new Date(rangeStart);
+    d.setDate(rangeStart.getDate() + i);
+    buckets.set(localDateKey(d), { strauch: 0, gruen: 0 });
+  }
+
+  for (const row of data ?? []) {
+    const key = localDateKey(new Date(row.created_at));
+    const bucket = buckets.get(key);
+    if (!bucket) continue;
+    bucket.strauch += Number(row.strauchschnitt_m3) || 0;
+    bucket.gruen += Number(row.gruenschnitt_m3) || 0;
+  }
+
+  return Array.from(buckets.entries()).map(([date, totals]) => {
+    const d = new Date(date);
+    return {
+      date,
+      label: d.toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" }),
+      strauch: Math.round(totals.strauch * 100) / 100,
+      gruen: Math.round(totals.gruen * 100) / 100,
+    };
+  });
+}
 
 async function getTotalsSince(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -43,10 +93,11 @@ export default async function AdminOverview() {
     1,
   ).toISOString();
 
-  const [today, week, month] = await Promise.all([
+  const [today, week, month, dailyData] = await Promise.all([
     getTotalsSince(supabase, dayStart),
     getTotalsSince(supabase, weekStart),
     getTotalsSince(supabase, monthStart),
+    getLastNDays(supabase, CHART_DAYS),
   ]);
 
   return (
@@ -56,6 +107,15 @@ export default async function AdminOverview() {
       <StatsSection title="Heute" totals={today} />
       <StatsSection title="Diese Woche" totals={week} />
       <StatsSection title="Diesen Monat" totals={month} />
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-semibold text-neutral-500">
+          Letzte {CHART_DAYS} Tage
+        </h2>
+        <div className="rounded-xl border border-neutral-200 bg-white p-6">
+          <DeliveryChart data={dailyData} />
+        </div>
+      </div>
     </div>
   );
 }

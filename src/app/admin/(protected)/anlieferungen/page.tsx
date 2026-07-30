@@ -14,7 +14,7 @@ export default async function AnlieferungenPage({
     from: params.from,
     to: params.to,
     districtId: params.districtId,
-    name: params.name,
+    query: params.query,
   });
 
   return (
@@ -56,11 +56,12 @@ export default async function AnlieferungenPage({
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Name
+          Suche
           <input
             type="text"
-            name="name"
-            defaultValue={params.name}
+            name="query"
+            placeholder="Name, Straße, Gemeinde, Bezirk…"
+            defaultValue={params.query}
             className="rounded-lg border border-neutral-300 px-2 py-1"
           />
         </label>

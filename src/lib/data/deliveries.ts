@@ -5,11 +5,33 @@ export type DeliveryFilters = {
   to?: string;
   districtId?: string;
   municipalityId?: string;
-  name?: string;
+  query?: string;
 };
+
+function sanitizeForFilter(value: string) {
+  // Kommas/Klammern haben in PostgREST-.or()-Filtern Sonderbedeutung.
+  return value.replace(/[,()]/g, " ").trim();
+}
 
 export async function listDeliveries(filters: DeliveryFilters = {}) {
   const supabase = await createClient();
+
+  let matchingDistrictIds: string[] = [];
+  let matchingMunicipalityIds: string[] = [];
+  const searchTerm = filters.query ? sanitizeForFilter(filters.query) : "";
+
+  if (searchTerm) {
+    const [{ data: matchedDistricts }, { data: matchedMunicipalities }] =
+      await Promise.all([
+        supabase.from("districts").select("id").ilike("name", `%${searchTerm}%`),
+        supabase
+          .from("municipalities")
+          .select("id")
+          .ilike("name", `%${searchTerm}%`),
+      ]);
+    matchingDistrictIds = (matchedDistricts ?? []).map((d) => d.id);
+    matchingMunicipalityIds = (matchedMunicipalities ?? []).map((m) => m.id);
+  }
 
   let query = supabase
     .from("deliveries")
@@ -24,10 +46,21 @@ export async function listDeliveries(filters: DeliveryFilters = {}) {
   if (filters.districtId) query = query.eq("district_id", filters.districtId);
   if (filters.municipalityId)
     query = query.eq("municipality_id", filters.municipalityId);
-  if (filters.name) {
-    query = query.or(
-      `first_name.ilike.%${filters.name}%,last_name.ilike.%${filters.name}%`,
-    );
+
+  if (searchTerm) {
+    const orParts = [
+      `first_name.ilike.%${searchTerm}%`,
+      `last_name.ilike.%${searchTerm}%`,
+      `street.ilike.%${searchTerm}%`,
+      `municipality_freetext.ilike.%${searchTerm}%`,
+    ];
+    if (matchingDistrictIds.length > 0) {
+      orParts.push(`district_id.in.(${matchingDistrictIds.join(",")})`);
+    }
+    if (matchingMunicipalityIds.length > 0) {
+      orParts.push(`municipality_id.in.(${matchingMunicipalityIds.join(",")})`);
+    }
+    query = query.or(orParts.join(","));
   }
 
   const { data, error } = await query.limit(500);

@@ -6,12 +6,15 @@ import { useMemo, useState } from "react";
 import { deleteDelivery } from "@/lib/actions/admin-deliveries";
 import { resolveMunicipalityDisplayName } from "@/lib/format";
 import { isSuspiciousDelivery } from "@/lib/flags";
+import { findDuplicateDeliveryIds } from "@/lib/duplicates";
 
 type DeliveryRow = {
   id: string;
   created_at: string;
   first_name: string;
   last_name: string;
+  street: string;
+  house_number: string;
   strauchschnitt_m3: number | null;
   gruenschnitt_m3: number | null;
   municipality_freetext: string | null;
@@ -38,12 +41,19 @@ export default function AnlieferungenTable({
   const [onlyFlagged, setOnlyFlagged] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const duplicateIds = useMemo(
+    () => findDuplicateDeliveryIds(deliveries),
+    [deliveries],
+  );
+
   const visibleDeliveries = useMemo(() => {
     if (!onlyFlagged) return deliveries;
-    return deliveries.filter((d) =>
-      isSuspiciousDelivery(d.strauchschnitt_m3, d.gruenschnitt_m3),
+    return deliveries.filter(
+      (d) =>
+        isSuspiciousDelivery(d.strauchschnitt_m3, d.gruenschnitt_m3) ||
+        duplicateIds.has(d.id),
     );
-  }, [deliveries, onlyFlagged]);
+  }, [deliveries, onlyFlagged, duplicateIds]);
 
   async function handleDelete(id: string) {
     if (!confirm("Diese Anlieferung wirklich löschen?")) return;
@@ -65,7 +75,7 @@ export default function AnlieferungenTable({
           checked={onlyFlagged}
           onChange={(e) => setOnlyFlagged(e.target.checked)}
         />
-        Nur auffällige anzeigen (Menge ≥ 5 m³)
+        Nur auffällige anzeigen (hohe Menge oder mögliches Duplikat)
       </label>
 
       <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
@@ -87,6 +97,7 @@ export default function AnlieferungenTable({
                 d.strauchschnitt_m3,
                 d.gruenschnitt_m3,
               );
+              const isDuplicate = duplicateIds.has(d.id);
               return (
                 <tr
                   key={d.id}
@@ -108,20 +119,21 @@ export default function AnlieferungenTable({
                     )}
                   </td>
                   <td className="px-4 py-2">
-                    {d.first_name} {d.last_name}
+                    <span className="inline-flex items-center gap-1">
+                      {d.first_name} {d.last_name}
+                      {isDuplicate && <DuplicateBadge />}
+                    </span>
                   </td>
                   <td className="px-4 py-2">
                     <span className="inline-flex items-center gap-1">
                       {d.strauchschnitt_m3 ? `${d.strauchschnitt_m3} m³` : "-"}
-                      {flagged && d.strauchschnitt_m3 && (
-                        <FlagBadge />
-                      )}
+                      {flagged && Boolean(d.strauchschnitt_m3) && <FlagBadge />}
                     </span>
                   </td>
                   <td className="px-4 py-2">
                     <span className="inline-flex items-center gap-1">
                       {d.gruenschnitt_m3 ? `${d.gruenschnitt_m3} m³` : "-"}
-                      {flagged && d.gruenschnitt_m3 && <FlagBadge />}
+                      {flagged && Boolean(d.gruenschnitt_m3) && <FlagBadge />}
                     </span>
                   </td>
                   <td className="px-4 py-2">
@@ -165,6 +177,17 @@ function FlagBadge() {
       className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white"
     >
       !
+    </span>
+  );
+}
+
+function DuplicateBadge() {
+  return (
+    <span
+      title="Mögliches Duplikat – gleicher Name & Adresse am selben Tag"
+      className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white"
+    >
+      2
     </span>
   );
 }
