@@ -54,7 +54,7 @@ export default function ExportForm({
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className="rounded-lg border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800"
           />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -63,7 +63,7 @@ export default function ExportForm({
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className="rounded-lg border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800"
           />
         </label>
       </div>
@@ -78,7 +78,7 @@ export default function ExportForm({
       </label>
 
       {useFilter && (
-        <div className="flex gap-4 rounded-lg bg-neutral-50 p-3">
+        <div className="flex gap-4 rounded-lg bg-neutral-50 p-3 dark:bg-neutral-800">
           <label className="flex flex-1 flex-col gap-1 text-sm">
             Bezirk
             <select
@@ -87,7 +87,7 @@ export default function ExportForm({
                 setDistrictId(e.target.value);
                 setMunicipalityId("");
               }}
-              className="rounded-lg border border-neutral-300 px-2 py-1.5"
+              className="rounded-lg border border-neutral-300 px-2 py-1.5 dark:border-neutral-700 dark:bg-neutral-900"
             >
               <option value="">Alle</option>
               {districts.map((d) => (
@@ -103,7 +103,7 @@ export default function ExportForm({
               value={municipalityId}
               onChange={(e) => setMunicipalityId(e.target.value)}
               disabled={!districtId}
-              className="rounded-lg border border-neutral-300 px-2 py-1.5 disabled:bg-neutral-100"
+              className="rounded-lg border border-neutral-300 px-2 py-1.5 disabled:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:disabled:bg-neutral-800"
             >
               <option value="">Alle</option>
               {municipalities.map((m) => (

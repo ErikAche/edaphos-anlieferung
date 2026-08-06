@@ -69,7 +69,7 @@ export default function AnlieferungenTable({
 
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex items-center gap-2 text-sm font-medium text-neutral-600">
+      <label className="flex items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
         <input
           type="checkbox"
           checked={onlyFlagged}
@@ -78,9 +78,9 @@ export default function AnlieferungenTable({
         Nur auffällige anzeigen (hohe Menge oder mögliches Duplikat)
       </label>
 
-      <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <table className="w-full min-w-[820px] text-sm">
-          <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500">
+          <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400">
             <tr>
               <th className="px-4 py-2">Datum</th>
               <th className="px-4 py-2">Bezirk</th>
@@ -101,7 +101,7 @@ export default function AnlieferungenTable({
               return (
                 <tr
                   key={d.id}
-                  className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
+                  className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-800"
                 >
                   <td className="px-4 py-2">
                     <Link
@@ -158,7 +158,10 @@ export default function AnlieferungenTable({
             })}
             {visibleDeliveries.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-neutral-400">
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-neutral-400 dark:text-neutral-500"
+                >
                   Keine Anlieferungen gefunden.
                 </td>
               </tr>

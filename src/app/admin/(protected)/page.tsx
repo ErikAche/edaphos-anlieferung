@@ -160,7 +160,9 @@ export default async function AdminOverview({
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-bold text-edaphos-black">Übersicht</h1>
+      <h1 className="text-2xl font-bold text-edaphos-black dark:text-neutral-100">
+        Übersicht
+      </h1>
 
       <StatsSection title="Heute" totals={today} />
       <StatsSection title="Diese Woche" totals={week} />
@@ -193,7 +195,9 @@ function BreakdownSection({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-neutral-500">{title}</h2>
+        <h2 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+          {title}
+        </h2>
         <div className="flex gap-2">
           {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
             <Link
@@ -202,7 +206,7 @@ function BreakdownSection({
               className={`rounded-lg px-3 py-1 text-xs font-semibold ${
                 p === period
                   ? "bg-edaphos-green text-white"
-                  : "border border-neutral-300 text-neutral-600 hover:border-edaphos-green"
+                  : "border border-neutral-300 text-neutral-600 hover:border-edaphos-green dark:border-neutral-700 dark:text-neutral-400"
               }`}
             >
               {PERIOD_LABELS[p]}
@@ -210,7 +214,7 @@ function BreakdownSection({
           ))}
         </div>
       </div>
-      <div className="rounded-xl border border-neutral-200 bg-white p-6">
+      <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
         <BreakdownBarChart rows={rows} />
       </div>
     </div>
@@ -220,7 +224,9 @@ function BreakdownSection({
 function StatsSection({ title, totals }: { title: string; totals: Totals }) {
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold text-neutral-500">{title}</h2>
+      <h2 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+        {title}
+      </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Anlieferungen" value={totals.count.toString()} />
         <StatCard label="Strauchschnitt (m³)" value={totals.strauch.toFixed(2)} />
@@ -232,8 +238,8 @@ function StatsSection({ title, totals }: { title: string; totals: Totals }) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-6">
-      <p className="text-sm text-neutral-500">{label}</p>
+    <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+      <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
       <p className="mt-2 text-3xl font-bold text-edaphos-green">{value}</p>
     </div>
   );

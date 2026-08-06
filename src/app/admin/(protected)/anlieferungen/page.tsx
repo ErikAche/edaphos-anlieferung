@@ -19,16 +19,18 @@ export default async function AnlieferungenPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-edaphos-black">Anlieferungen</h1>
+      <h1 className="text-2xl font-bold text-edaphos-black dark:text-neutral-100">
+        Anlieferungen
+      </h1>
 
-      <form className="flex flex-wrap items-end gap-3 rounded-xl border border-neutral-200 bg-white p-4">
+      <form className="flex flex-wrap items-end gap-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
         <label className="flex flex-col gap-1 text-sm">
           Von
           <input
             type="date"
             name="from"
             defaultValue={params.from}
-            className="rounded-lg border border-neutral-300 px-2 py-1"
+            className="rounded-lg border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-800"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -37,7 +39,7 @@ export default async function AnlieferungenPage({
             type="date"
             name="to"
             defaultValue={params.to}
-            className="rounded-lg border border-neutral-300 px-2 py-1"
+            className="rounded-lg border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-800"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -45,7 +47,7 @@ export default async function AnlieferungenPage({
           <select
             name="districtId"
             defaultValue={params.districtId ?? ""}
-            className="rounded-lg border border-neutral-300 px-2 py-1"
+            className="rounded-lg border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-800"
           >
             <option value="">Alle</option>
             {districts.map((d) => (
@@ -62,7 +64,7 @@ export default async function AnlieferungenPage({
             name="query"
             placeholder="Name, Straße, Gemeinde, Bezirk…"
             defaultValue={params.query}
-            className="rounded-lg border border-neutral-300 px-2 py-1"
+            className="rounded-lg border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-800"
           />
         </label>
         <button
@@ -71,7 +73,10 @@ export default async function AnlieferungenPage({
         >
           Filtern
         </button>
-        <Link href="/admin/anlieferungen" className="text-sm text-neutral-500 underline">
+        <Link
+          href="/admin/anlieferungen"
+          className="text-sm text-neutral-500 underline dark:text-neutral-400"
+        >
           Zurücksetzen
         </Link>
       </form>

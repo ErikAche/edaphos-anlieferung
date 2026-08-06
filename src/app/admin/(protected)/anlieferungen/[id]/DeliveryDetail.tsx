@@ -87,22 +87,22 @@ export default function DeliveryDetail({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2 flex flex-col gap-6">
-        <div className="rounded-xl border border-neutral-200 bg-white p-6">
+        <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-edaphos-black">
+            <h1 className="text-xl font-bold text-edaphos-black dark:text-neutral-100">
               Anlieferung vom {formatDate(delivery.created_at)}
             </h1>
             {!editing && (
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditing(true)}
-                  className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:border-edaphos-green"
+                  className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:border-edaphos-green dark:border-neutral-700"
                 >
                   Bearbeiten
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                  className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/40"
                 >
                   Löschen
                 </button>
@@ -193,13 +193,13 @@ export default function DeliveryDetail({
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="rounded-lg bg-edaphos-green px-4 py-1.5 text-sm font-semibold text-white hover:bg-edaphos-green-dark disabled:bg-neutral-300"
+                  className="rounded-lg bg-edaphos-green px-4 py-1.5 text-sm font-semibold text-white hover:bg-edaphos-green-dark disabled:bg-neutral-300 dark:disabled:bg-neutral-700"
                 >
                   {saving ? "Speichert…" : "Speichern"}
                 </button>
                 <button
                   onClick={() => setEditing(false)}
-                  className="rounded-lg border border-neutral-300 px-4 py-1.5 text-sm font-medium"
+                  className="rounded-lg border border-neutral-300 px-4 py-1.5 text-sm font-medium dark:border-neutral-700"
                 >
                   Abbrechen
                 </button>
@@ -208,12 +208,12 @@ export default function DeliveryDetail({
           )}
         </div>
 
-        <div className="rounded-xl border border-neutral-200 bg-white p-6">
-          <h2 className="mb-3 text-sm font-semibold text-neutral-500">
+        <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <h2 className="mb-3 text-sm font-semibold text-neutral-500 dark:text-neutral-400">
             Änderungsverlauf
           </h2>
           {auditLog.length === 0 ? (
-            <p className="text-sm text-neutral-400">
+            <p className="text-sm text-neutral-400 dark:text-neutral-500">
               Keine Änderungen seit der Erfassung.
             </p>
           ) : (
@@ -221,7 +221,7 @@ export default function DeliveryDetail({
               {auditLog.map((entry) => (
                 <li
                   key={entry.id}
-                  className="rounded-lg border border-neutral-100 bg-neutral-50 p-3"
+                  className="rounded-lg border border-neutral-100 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-800"
                 >
                   <span className="font-medium">
                     {entry.action === "update" ? "Bearbeitet" : "Gelöscht"}
@@ -234,8 +234,8 @@ export default function DeliveryDetail({
         </div>
       </div>
 
-      <div className="rounded-xl border border-neutral-200 bg-white p-6">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-500">
+      <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <h2 className="mb-3 text-sm font-semibold text-neutral-500 dark:text-neutral-400">
           Unterschrift
         </h2>
         {signatureUrl ? (
@@ -246,7 +246,7 @@ export default function DeliveryDetail({
             className="w-full rounded-lg border border-neutral-200 bg-white"
           />
         ) : (
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-neutral-400 dark:text-neutral-500">
             Unterschrift konnte nicht geladen werden.
           </p>
         )}
@@ -266,8 +266,8 @@ function Field({
 }) {
   return (
     <div>
-      <dt className="text-neutral-500">{label}</dt>
-      <dd className="flex items-center gap-2 font-medium text-edaphos-black">
+      <dt className="text-neutral-500 dark:text-neutral-400">{label}</dt>
+      <dd className="flex items-center gap-2 font-medium text-edaphos-black dark:text-neutral-100">
         {value}
         {flagged && (
           <span
@@ -297,7 +297,7 @@ function EditField({
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-neutral-300 px-2 py-1.5"
+        className="rounded-lg border border-neutral-300 px-2 py-1.5 dark:border-neutral-700 dark:bg-neutral-800"
       />
     </label>
   );

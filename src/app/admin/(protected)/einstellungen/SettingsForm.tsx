@@ -22,7 +22,7 @@ export default function SettingsForm({
         type="email"
         required
         defaultValue={currentEmail}
-        className="rounded-lg border border-neutral-300 px-3 py-2"
+        className="rounded-lg border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800"
       />
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       {state.success && (
@@ -31,7 +31,7 @@ export default function SettingsForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-lg bg-edaphos-green px-4 py-1.5 text-sm font-semibold text-white hover:bg-edaphos-green-dark disabled:bg-neutral-300"
+        className="self-start rounded-lg bg-edaphos-green px-4 py-1.5 text-sm font-semibold text-white hover:bg-edaphos-green-dark disabled:bg-neutral-300 dark:disabled:bg-neutral-700"
       >
         {pending ? "Speichert…" : "Speichern"}
       </button>

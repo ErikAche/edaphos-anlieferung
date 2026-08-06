@@ -17,7 +17,7 @@ export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
 
   if (rows.length === 0) {
     return (
-      <p className="text-sm text-neutral-400">
+      <p className="text-sm text-neutral-400 dark:text-neutral-500">
         Noch keine Anlieferungen im Zeitraum.
       </p>
     );
@@ -27,7 +27,7 @@ export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
 
   return (
     <div className="viz-root flex flex-col gap-4">
-      <div className="flex items-center gap-4 text-sm text-neutral-600">
+      <div className="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-400">
         <LegendEntry color={SERIES_1} label="Strauchschnitt (m³)" />
         <LegendEntry color={SERIES_2} label="Grünschnitt (m³)" />
       </div>
@@ -46,7 +46,7 @@ export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
               onMouseEnter={() => setHovered(row.label)}
               onMouseLeave={() => setHovered((h) => (h === row.label ? null : h))}
             >
-              <span className="w-40 shrink-0 truncate text-right text-xs text-neutral-600">
+              <span className="w-40 shrink-0 truncate text-right text-xs text-neutral-600 dark:text-neutral-400">
                 {row.label}
               </span>
               <div className="relative flex-1">
@@ -75,13 +75,13 @@ export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
                   )}
                 </div>
                 {hovered === row.label && (
-                  <div className="absolute left-0 top-full z-10 mt-1 whitespace-nowrap rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs shadow-lg">
+                  <div className="absolute left-0 top-full z-10 mt-1 whitespace-nowrap rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
                     <p style={{ color: SERIES_1 }}>Strauch: {row.strauch.toFixed(2)} m³</p>
                     <p style={{ color: SERIES_2 }}>Grün: {row.gruen.toFixed(2)} m³</p>
                   </div>
                 )}
               </div>
-              <span className="w-16 shrink-0 text-xs font-medium text-neutral-500">
+              <span className="w-16 shrink-0 text-xs font-medium text-neutral-500 dark:text-neutral-400">
                 {total.toFixed(2)} m³
               </span>
             </div>
