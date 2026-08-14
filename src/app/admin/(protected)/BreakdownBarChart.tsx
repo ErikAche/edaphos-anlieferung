@@ -8,8 +8,8 @@ export type BreakdownRow = {
   gruen: number;
 };
 
-const SERIES_1 = "#2a78d6"; // Strauchschnitt (kategorial Slot 1, validierte Palette)
-const SERIES_2 = "#eb6834"; // Gruenschnitt (kategorial Slot 2)
+const STRAUCH_COLOR = "var(--edaphos-orange)";
+const GRUEN_COLOR = "var(--edaphos-green)";
 const BAR_HEIGHT = 18;
 
 export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
@@ -28,8 +28,8 @@ export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
   return (
     <div className="viz-root flex flex-col gap-4">
       <div className="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-400">
-        <LegendEntry color={SERIES_1} label="Strauchschnitt (m³)" />
-        <LegendEntry color={SERIES_2} label="Grünschnitt (m³)" />
+        <LegendEntry color={STRAUCH_COLOR} label="Strauchschnitt (m³)" />
+        <LegendEntry color={GRUEN_COLOR} label="Grünschnitt (m³)" />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -58,7 +58,7 @@ export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
                     <div
                       style={{
                         width: `${strauchPct}%`,
-                        backgroundColor: SERIES_1,
+                        backgroundColor: STRAUCH_COLOR,
                         borderRadius: gruenPct > 0 ? "4px 0 0 4px" : "4px",
                       }}
                     />
@@ -68,7 +68,7 @@ export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
                     <div
                       style={{
                         width: `${gruenPct}%`,
-                        backgroundColor: SERIES_2,
+                        backgroundColor: GRUEN_COLOR,
                         borderRadius: "0 4px 4px 0",
                       }}
                     />
@@ -76,8 +76,8 @@ export default function BreakdownBarChart({ rows }: { rows: BreakdownRow[] }) {
                 </div>
                 {hovered === row.label && (
                   <div className="absolute left-0 top-full z-10 mt-1 whitespace-nowrap rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
-                    <p style={{ color: SERIES_1 }}>Strauch: {row.strauch.toFixed(2)} m³</p>
-                    <p style={{ color: SERIES_2 }}>Grün: {row.gruen.toFixed(2)} m³</p>
+                    <p style={{ color: STRAUCH_COLOR }}>Strauch: {row.strauch.toFixed(2)} m³</p>
+                    <p style={{ color: GRUEN_COLOR }}>Grün: {row.gruen.toFixed(2)} m³</p>
                   </div>
                 )}
               </div>

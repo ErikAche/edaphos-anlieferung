@@ -229,18 +229,34 @@ function StatsSection({ title, totals }: { title: string; totals: Totals }) {
       </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Anlieferungen" value={totals.count.toString()} />
-        <StatCard label="Strauchschnitt (m³)" value={totals.strauch.toFixed(2)} />
-        <StatCard label="Grünschnitt (m³)" value={totals.gruen.toFixed(2)} />
+        <StatCard
+          label="Strauchschnitt (m³)"
+          value={totals.strauch.toFixed(2)}
+          color="text-edaphos-orange"
+        />
+        <StatCard
+          label="Grünschnitt (m³)"
+          value={totals.gruen.toFixed(2)}
+          color="text-edaphos-green"
+        />
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({
+  label,
+  value,
+  color = "text-edaphos-green",
+}: {
+  label: string;
+  value: string;
+  color?: string;
+}) {
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
       <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-edaphos-green">{value}</p>
+      <p className={`mt-2 text-3xl font-bold ${color}`}>{value}</p>
     </div>
   );
 }

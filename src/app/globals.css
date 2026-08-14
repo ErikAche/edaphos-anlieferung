@@ -7,6 +7,7 @@
   --foreground: #171717;
   --edaphos-green: #2e8b1f;
   --edaphos-green-dark: #1f5f15;
+  --edaphos-orange: #eb6834;
   --edaphos-black: #111111;
 }
 
@@ -15,6 +16,7 @@
   --color-foreground: var(--foreground);
   --color-edaphos-green: var(--edaphos-green);
   --color-edaphos-green-dark: var(--edaphos-green-dark);
+  --color-edaphos-orange: var(--edaphos-orange);
   --color-edaphos-black: var(--edaphos-black);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
