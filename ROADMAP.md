@@ -8,10 +8,10 @@ Kurzfristig zählt nur: das System, das gerade live bei Rosi/EDAPHOS im Einsatz 
 
 ### Security-Fahrplan (separate, einzeln deploybare Schritte)
 
-1. **Next.js 16.2.12 → 16.3.5** — `npm audit` zeigt eine kritische, unauthentifizierte RCE-Lücke in der aktuellen Version. Erst lokal gründlich testen (Wizard-Anlieferung, Admin-Login, Export, Dark Mode), dann eigener Deploy.
-2. **Rate-Limiting** auf der öffentlichen Anlieferungs-Route (`src/proxy.ts` schützt aktuell nur `/admin/*`) — Postgres-basiert (übersteht Neustarts), Schwelle 5 Anlieferungen/Stunde + 15/Tag je IP. Grund: Einträge fließen direkt in die Gemeinde-Abrechnung, ein reiner In-Memory-Zähler wäre nach jedem Deploy zurückgesetzt.
-3. **Supabase-Härtung** (ein Schritt): Datei-Größen-/MIME-Type-Constraint auf dem `signatures`-Storage-Bucket (aktuell kann anonym jede Datei hochgeladen werden, nur clientseitig auf PNG geprüft), Leaked-Password-Protection in Supabase Auth aktivieren (aktuell deaktiviert, prüft Admin-Passwörter nicht gegen HaveIBeenPwned).
-4. **Optional, niedrige Priorität:** `npm audit fix` für übrige transitive Abhängigkeiten (postcss, sharp, uuid, brace-expansion, nanoid), `pg_net`-Extension aus dem `public`-Schema verschieben.
+1. ✅ **Next.js 16.2.12 → 16.3.5** (2026-09-16, erledigt) — behob die kritische, unauthentifizierte RCE-Lücke, die auch per Hostinger-Vulnerability-Scan gemeldet wurde. Lokal getestet (Wizard-Anlieferung, `/qr`, Admin-Login-Redirect), dann deployed.
+2. **Rate-Limiting** auf der öffentlichen Anlieferungs-Route (`src/proxy.ts` schützt aktuell nur `/admin/*`) — Postgres-basiert (übersteht Neustarts), Schwelle 5 Anlieferungen/Stunde + 15/Tag je IP. Grund: Einträge fließen direkt in die Gemeinde-Abrechnung, ein reiner In-Memory-Zähler wäre nach jedem Deploy zurückgesetzt. **Noch offen.**
+3. **Supabase-Härtung** (ein Schritt): Datei-Größen-/MIME-Type-Constraint auf dem `signatures`-Storage-Bucket (aktuell kann anonym jede Datei hochgeladen werden, nur clientseitig auf PNG geprüft), Leaked-Password-Protection in Supabase Auth aktivieren (aktuell deaktiviert, prüft Admin-Passwörter nicht gegen HaveIBeenPwned). **Noch offen.**
+4. ✅ **`npm audit fix`** (2026-09-16, teilweise erledigt) — brace-expansion und nanoid gepatcht. Bewusst NICHT gefixt: die uuid/exceljs-Meldung (moderat) — der einzige Fix-Pfad wäre ein Downgrade von exceljs 4.4.0 auf 3.4.0 (andere API, würde den aktiv genutzten Excel-Export vermutlich brechen), für eine intern verwendete ID-Bibliothek ohne Kontakt zu Nutzereingaben. Akzeptiertes Restrisiko. `pg_net`-Extension aus dem `public`-Schema verschieben ist weiterhin offen (niedrige Priorität).
 
 Geprüft und für unkritisch befunden: RLS-Policies auf allen Tabellen sind sauber (anonym nur `INSERT` auf `deliveries`, alles andere admin-only), `is_admin()` ist zwar laut Security Advisor als `SECURITY DEFINER` auffällig, gibt aber nur ein Bool über den aufrufenden User selbst zurück — kein echtes Datenleck.
 
