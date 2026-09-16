@@ -1,28 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 const STORAGE_KEY = "edaphos-admin-theme";
 const SHELL_ID = "admin-shell";
 
-function readInitialTheme(): "light" | "dark" {
-  if (typeof document === "undefined") return "light";
-  return document.getElementById(SHELL_ID)?.getAttribute("data-theme") === "dark"
-    ? "dark"
-    : "light";
+function readStoredTheme(): "light" | "dark" {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+function applyTheme(theme: "light" | "dark") {
+  const shell = document.getElementById(SHELL_ID);
+  if (!shell) return;
+  if (theme === "dark") {
+    shell.setAttribute("data-theme", "dark");
+  } else {
+    shell.removeAttribute("data-theme");
+  }
 }
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">(readInitialTheme);
+  const [theme, setTheme] = useState<"light" | "dark">(() =>
+    typeof window === "undefined" ? "light" : readStoredTheme(),
+  );
+
+  // Wendet das Theme bei jedem Mount erneut an (nicht nur beim ersten) -
+  // falls die Admin-Shell aus irgendeinem Grund neu gemountet wird, ohne
+  // dass das Inline-Script im Layout erneut läuft. useLayoutEffect greift
+  // vor dem nächsten Browser-Paint, dadurch kein sichtbares Aufblitzen.
+  useLayoutEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
-    const shell = document.getElementById(SHELL_ID);
-    if (next === "dark") {
-      shell?.setAttribute("data-theme", "dark");
-    } else {
-      shell?.removeAttribute("data-theme");
-    }
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
