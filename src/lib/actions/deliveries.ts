@@ -1,8 +1,18 @@
 "use server";
 
 import { randomUUID } from "crypto";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { deliverySchema } from "@/lib/validation/delivery";
+
+async function getClientIp(): Promise<string> {
+  const headerList = await headers();
+  const forwardedFor = headerList.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || "unknown";
+  }
+  return headerList.get("x-real-ip") ?? "unknown";
+}
 
 export type SubmitDeliveryState = {
   success: boolean;
@@ -28,6 +38,20 @@ export async function submitDelivery(
 
   const data = parsed.data;
   const supabase = await createClient();
+
+  const ip = await getClientIp();
+  const { data: allowed, error: rateLimitError } = await supabase.rpc(
+    "check_delivery_rate_limit",
+    { p_ip: ip },
+  );
+
+  if (rateLimitError || !allowed) {
+    return {
+      success: false,
+      error:
+        "Zu viele Anlieferungen von dieser Verbindung in kurzer Zeit. Bitte versuchen Sie es später erneut.",
+    };
+  }
 
   const { data: municipality, error: municipalityError } = await supabase
     .from("municipalities")

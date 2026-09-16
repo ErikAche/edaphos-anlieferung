@@ -139,6 +139,24 @@ export type Database = {
           },
         ]
       }
+      delivery_rate_limit: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string
+        }
+        Relationships: []
+      }
       districts: {
         Row: {
           id: string
@@ -215,6 +233,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_delivery_rate_limit: { Args: { p_ip: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
