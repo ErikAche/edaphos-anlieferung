@@ -1,6 +1,6 @@
 # EDAPHOS Anlieferung – Roadmap
 
-Stand: 2026-09-16. Entstanden aus einer Repo-/Security-Review plus einem "Grillme"-Gespräch zur langfristigen Richtung. Wird bei Bedarf fortgeschrieben, nicht bei jeder Kleinigkeit.
+Stand: 2026-10-09 (erstellt 2026-09-16). Entstanden aus einer Repo-/Security-Review plus einem "Grillme"-Gespräch zur langfristigen Richtung. Wird bei Bedarf fortgeschrieben, nicht bei jeder Kleinigkeit.
 
 ## Aktuelle Priorität: Startphase bei EDAPHOS sauber durchziehen
 
@@ -13,14 +13,20 @@ Kurzfristig zählt nur: das System, das gerade live bei Rosi/EDAPHOS im Einsatz 
 3. **Supabase-Härtung:**
    - ✅ (2026-09-16, erledigt) Datei-Größen-/MIME-Type-Constraint auf dem `signatures`-Storage-Bucket: max. 2 MB, nur `image/png`. Verifiziert über die anon-REST-API: gültiger PNG-Upload geht durch, `text/plain`-Upload wird mit 415 abgelehnt.
    - ❌ **Leaked-Password-Protection — technisch blockiert, nicht (mehr) offen.** Der Schalter (Authentication → Sign In/Providers → Email → "Prevent use of leaked passwords") ist laut Supabase-Dashboard nur ab dem kostenpflichtigen **Pro-Plan** verfügbar; das Projekt läuft aktuell auf Free. Kein kritischer Fund (nur ein Zusatz-Check gegen bekannte Passwort-Leaks), daher kein Grund, deswegen auf Pro upzugraden — bleibt bewusst offen, bis ein Plan-Upgrade aus anderen Gründen ansteht.
-4. ✅ **`npm audit fix`** (2026-09-16, teilweise erledigt) — brace-expansion und nanoid gepatcht. Bewusst NICHT gefixt: die uuid/exceljs-Meldung (moderat) — der einzige Fix-Pfad wäre ein Downgrade von exceljs 4.4.0 auf 3.4.0 (andere API, würde den aktiv genutzten Excel-Export vermutlich brechen), für eine intern verwendete ID-Bibliothek ohne Kontakt zu Nutzereingaben. Akzeptiertes Restrisiko. `pg_net`-Extension aus dem `public`-Schema verschieben ist weiterhin offen (niedrige Priorität).
+4. ✅ **`npm audit fix`** (2026-09-16) — brace-expansion und nanoid gepatcht. `pg_net`-Extension aus dem `public`-Schema verschieben ist weiterhin offen (niedrige Priorität).
+5. ✅ **Nachtrag 2026-10-09** — neue kritische Next.js-Meldung (betraf bis 16.3.7), per `npm audit fix` auf **Next.js 16.4.0** behoben (inkl. sharp, source-map-js). Die uuid/exceljs-Meldung, im September noch als Restrisiko akzeptiert, ist jetzt ebenfalls behoben: per `overrides` in `package.json` bekommt `exceljs` (4.4.0, neueste Version, bringt selbst noch uuid 8 mit) gezielt **uuid 11.1.1** — kein exceljs-Downgrade nötig. exceljs nutzt aus uuid nur `v4()`; Export und genau dieser Code-Pfad mit uuid 11 getestet. **Stand jetzt: `npm audit --omit=dev` = 0 Schwachstellen.** Übrige Meldungen betreffen nur Dev-Tools (ESLint), die nicht deployt werden. Neue Meldungen tauchen mit der Zeit immer wieder auf — nach längerer Pause `npm audit --omit=dev` erneut prüfen.
 
 Geprüft und für unkritisch befunden: RLS-Policies auf allen Tabellen sind sauber (anonym nur `INSERT` auf `deliveries`, alles andere admin-only), `is_admin()` ist zwar laut Security Advisor als `SECURITY DEFINER` auffällig, gibt aber nur ein Bool über den aufrufenden User selbst zurück — kein echtes Datenleck.
 
+### Umgesetzt seit dem Security-Update
+
+- **Privat oder Gemeindemitarbeiter** (2026-10-09): neuer erster Wizard-Schritt "Wie liefern Sie an?" (jetzt 8 Schritte). Gespeichert in `deliveries.delivery_type` (`privat`/`gemeinde`, Default `privat` — alle bisherigen Anlieferungen stehen auf privat). Angezeigt in Admin-Liste und -Detail, im manuellen Export und in der Monatsabrechnung (Edge Function `monthly-export`, Version 5) als Spalte "Anlieferer". Alle übrigen Angaben sind für beide Arten bewusst noch identisch — was sich für Gemeindemitarbeiter unterscheiden soll (Felder, Abrechnung, Export), wird angepasst, sobald dazu mehr Infos da sind.
+- **Produktions-Build läuft mit Webpack** (`next build --webpack`, 2026-10-09): Auf den Hostinger-Build-Servern scheiterte der Turbopack-Build zweimal mit `TurbopackInternalError … globals.css … node process exited before we could connect to it` (der separate PostCSS-Hilfsprozess stirbt), obwohl derselbe Commit lokal aus einem frischen Klon fehlerfrei baute. Webpack verarbeitet PostCSS im selben Prozess und baut dort problemlos. `npm run dev` bleibt bei Turbopack. Nicht ohne Test-Deploy zurückstellen.
+- **Dark-Mode-Bug behoben** (2026-09-16, vom User live bestätigt): Theme ging bei Reload/Navigation verloren; `ThemeToggle` liest jetzt direkt aus `localStorage` und wendet das Theme per `useLayoutEffect` bei jedem Mount an.
+
 ### Sonstige offene Punkte (kein aktiver Task, nur festgehalten)
 
-- **Excel-Export-Anpassung**: wartet auf eine Beispiel-Excel-Datei (von wem auch immer die Abrechnung erhält), um das aktuelle Export-Format entsprechend anzupassen. Nichts zu tun, bis die Datei da ist.
-- **Dark-Mode-Bug behoben** (2026-09-16): Theme ging bei Reload/Navigation verloren, weil `ThemeToggle` den gespeicherten Zustand nur einmal beim ersten Mount aus dem DOM las, statt ihn aktiv zu setzen. Fix: liest jetzt direkt aus `localStorage` und wendet das Theme per `useLayoutEffect` bei jedem Mount erneut an. Noch nicht live-verifiziert (kein Admin-Zugriff für Claude) — vom User nach Deploy gegenzuchecken.
+- **Excel-Export-Anpassung**: wartet auf eine Beispiel-Excel-Datei (von wem auch immer die Abrechnung erhält), um das aktuelle Export-Format entsprechend anzupassen. Nichts zu tun, bis die Datei da ist. Dabei auch klären, ob Gemeindemitarbeiter-Anlieferungen im Export getrennt geführt werden sollen.
 
 ## Zurückgestellt: Multi-Mandanten-Vision
 
