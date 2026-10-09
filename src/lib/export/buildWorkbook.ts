@@ -1,7 +1,9 @@
 import ExcelJS from "exceljs";
+import { formatDeliveryType } from "@/lib/format";
 
 export type ExportDelivery = {
   created_at: string;
+  delivery_type: string;
   district_id: string;
   district_name: string;
   municipality_id: string | null;
@@ -18,6 +20,7 @@ const HEADERS = [
   "Bezirk",
   "Gemeinde",
   "Datum",
+  "Anlieferer",
   "Vorname",
   "Nachname",
   "Straße",
@@ -71,6 +74,7 @@ export async function buildDeliveriesWorkbook(
       row.district_name,
       sanitizeForSpreadsheet(row.municipality_display_name),
       new Date(row.created_at).toLocaleString("de-AT"),
+      formatDeliveryType(row.delivery_type),
       sanitizeForSpreadsheet(row.first_name),
       sanitizeForSpreadsheet(row.last_name),
       sanitizeForSpreadsheet(row.street),

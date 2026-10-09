@@ -72,6 +72,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           deleted_by: string | null
+          delivery_type: string
           district_id: string
           first_name: string
           gruenschnitt_m3: number | null
@@ -90,6 +91,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          delivery_type?: string
           district_id: string
           first_name: string
           gruenschnitt_m3?: number | null
@@ -108,6 +110,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          delivery_type?: string
           district_id?: string
           first_name?: string
           gruenschnitt_m3?: number | null

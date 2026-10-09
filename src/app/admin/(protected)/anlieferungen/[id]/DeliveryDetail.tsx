@@ -6,7 +6,7 @@ import {
   deleteDelivery,
   updateDelivery,
 } from "@/lib/actions/admin-deliveries";
-import { resolveMunicipalityDisplayName } from "@/lib/format";
+import { formatDeliveryType, resolveMunicipalityDisplayName } from "@/lib/format";
 import { isSuspiciousDelivery } from "@/lib/flags";
 import type { Tables } from "@/lib/types/database";
 
@@ -114,6 +114,10 @@ export default function DeliveryDetail({
 
           {!editing ? (
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <Field
+                label="Anlieferer"
+                value={formatDeliveryType(delivery.delivery_type)}
+              />
               <Field label="Bezirk" value={delivery.districts?.name ?? "-"} />
               <Field
                 label="Gemeinde"

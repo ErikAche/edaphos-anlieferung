@@ -1,7 +1,13 @@
 import { z } from "zod";
 
+export const DELIVERY_TYPES = ["privat", "gemeinde"] as const;
+export type DeliveryType = (typeof DELIVERY_TYPES)[number];
+
 export const deliverySchema = z
   .object({
+    deliveryType: z.enum(DELIVERY_TYPES, {
+      message: "Bitte angeben, ob Sie privat oder als Gemeindemitarbeiter anliefern.",
+    }),
     districtId: z.string().uuid({ message: "Bitte einen Bezirk wählen." }),
     municipalityId: z.string().uuid({ message: "Bitte eine Gemeinde wählen." }),
     municipalityFreetext: z.string().trim().max(120).optional(),

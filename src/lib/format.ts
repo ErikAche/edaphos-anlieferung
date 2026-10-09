@@ -7,3 +7,7 @@ export function resolveMunicipalityDisplayName(
   }
   return municipality?.name ?? freetext ?? "";
 }
+
+export function formatDeliveryType(type: string): string {
+  return type === "gemeinde" ? "Gemeindemitarbeiter" : "Privat";
+}

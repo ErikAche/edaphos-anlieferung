@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("deliveries")
     .select(
-      "created_at, district_id, municipality_id, municipality_freetext, first_name, last_name, street, house_number, strauchschnitt_m3, gruenschnitt_m3",
+      "created_at, delivery_type, district_id, municipality_id, municipality_freetext, first_name, last_name, street, house_number, strauchschnitt_m3, gruenschnitt_m3",
     )
     .is("deleted_at", null)
     .gte("created_at", from)
@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
 
     return {
       created_at: d.created_at,
+      delivery_type: d.delivery_type,
       district_id: d.district_id,
       district_name: districtById.get(d.district_id)?.name ?? "Unbekannt",
       municipality_id: d.municipality_id,

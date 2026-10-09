@@ -11,6 +11,7 @@ const HEADERS = [
   "Bezirk",
   "Gemeinde",
   "Datum",
+  "Anlieferer",
   "Vorname",
   "Nachname",
   "Straße",
@@ -84,7 +85,7 @@ Deno.serve(async (_req: Request) => {
         supabase
           .from("deliveries")
           .select(
-            "created_at, district_id, municipality_id, municipality_freetext, first_name, last_name, street, house_number, strauchschnitt_m3, gruenschnitt_m3",
+            "created_at, delivery_type, district_id, municipality_id, municipality_freetext, first_name, last_name, street, house_number, strauchschnitt_m3, gruenschnitt_m3",
           )
           .is("deleted_at", null)
           .gte("created_at", from)
@@ -103,6 +104,7 @@ Deno.serve(async (_req: Request) => {
         districtName: districtById.get(d.district_id)?.name ?? "Unbekannt",
         municipalityName,
         created_at: d.created_at,
+        deliveryTypeLabel: d.delivery_type === "gemeinde" ? "Gemeindemitarbeiter" : "Privat",
         first_name: d.first_name,
         last_name: d.last_name,
         street: d.street,
@@ -134,6 +136,7 @@ Deno.serve(async (_req: Request) => {
         row.districtName,
         sanitizeForSpreadsheet(row.municipalityName),
         new Date(row.created_at).toLocaleString("de-AT"),
+        row.deliveryTypeLabel,
         sanitizeForSpreadsheet(row.first_name),
         sanitizeForSpreadsheet(row.last_name),
         sanitizeForSpreadsheet(row.street),

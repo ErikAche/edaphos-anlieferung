@@ -90,6 +90,7 @@ export async function submitDelivery(
   }
 
   const { error: insertError } = await supabase.from("deliveries").insert({
+    delivery_type: data.deliveryType,
     district_id: data.districtId,
     municipality_id: data.municipalityId,
     municipality_freetext: municipalityFreetext,

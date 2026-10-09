@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { deleteDelivery } from "@/lib/actions/admin-deliveries";
-import { resolveMunicipalityDisplayName } from "@/lib/format";
+import { formatDeliveryType, resolveMunicipalityDisplayName } from "@/lib/format";
 import { isSuspiciousDelivery } from "@/lib/flags";
 import { findDuplicateDeliveryIds } from "@/lib/duplicates";
 
 type DeliveryRow = {
   id: string;
   created_at: string;
+  delivery_type: string;
   first_name: string;
   last_name: string;
   street: string;
@@ -83,6 +84,7 @@ export default function AnlieferungenTable({
           <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400">
             <tr>
               <th className="px-4 py-2">Datum</th>
+              <th className="px-4 py-2">Anlieferer</th>
               <th className="px-4 py-2">Bezirk</th>
               <th className="px-4 py-2">Gemeinde</th>
               <th className="px-4 py-2">Name</th>
@@ -111,6 +113,7 @@ export default function AnlieferungenTable({
                       {formatDate(d.created_at)}
                     </Link>
                   </td>
+                  <td className="px-4 py-2">{formatDeliveryType(d.delivery_type)}</td>
                   <td className="px-4 py-2">{d.districts?.name}</td>
                   <td className="px-4 py-2">
                     {resolveMunicipalityDisplayName(
@@ -159,7 +162,7 @@ export default function AnlieferungenTable({
             {visibleDeliveries.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="px-4 py-8 text-center text-neutral-400 dark:text-neutral-500"
                 >
                   Keine Anlieferungen gefunden.

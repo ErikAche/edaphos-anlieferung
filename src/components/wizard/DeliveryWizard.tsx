@@ -3,6 +3,8 @@
 import { useMemo, useRef, useState } from "react";
 import type { DistrictOption } from "@/lib/data/districts";
 import { submitDelivery } from "@/lib/actions/deliveries";
+import { formatDeliveryType } from "@/lib/format";
+import type { DeliveryType } from "@/lib/validation/delivery";
 import SignaturePad, { type SignaturePadHandle } from "./SignaturePad";
 import {
   BigChoiceButton,
@@ -14,6 +16,7 @@ import {
 } from "./ui";
 
 type Step =
+  | "art"
   | "bezirk"
   | "gemeinde"
   | "name"
@@ -24,6 +27,7 @@ type Step =
   | "erfolg";
 
 const STEP_ORDER: Step[] = [
+  "art",
   "bezirk",
   "gemeinde",
   "name",
@@ -35,6 +39,7 @@ const STEP_ORDER: Step[] = [
 
 function emptyForm() {
   return {
+    deliveryType: "" as DeliveryType | "",
     districtId: "",
     municipalityId: "",
     municipalityFreetext: "",
@@ -52,7 +57,7 @@ export default function DeliveryWizard({
 }: {
   districts: DistrictOption[];
 }) {
-  const [step, setStep] = useState<Step>("bezirk");
+  const [step, setStep] = useState<Step>("art");
   const [form, setForm] = useState(emptyForm());
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(
     null,
@@ -113,7 +118,7 @@ export default function DeliveryWizard({
     setSignatureDataUrl(null);
     signatureRef.current?.clear();
     setError(null);
-    setStep("bezirk");
+    setStep("art");
   }
 
   async function handleSubmit() {
@@ -126,6 +131,7 @@ export default function DeliveryWizard({
 
     setSubmitting(true);
     const result = await submitDelivery({
+      deliveryType: form.deliveryType,
       districtId: form.districtId,
       municipalityId: form.municipalityId || undefined,
       municipalityFreetext: selectedMunicipality?.isCatchAll
@@ -176,6 +182,27 @@ export default function DeliveryWizard({
     <div className="flex flex-col gap-8">
       <ProgressBar step={stepIndex} total={STEP_ORDER.length} />
 
+      {step === "art" && (
+        <div className="flex flex-col gap-4">
+          <StepHeading>Wie liefern Sie an?</StepHeading>
+          <div className="flex flex-col gap-3">
+            <BigChoiceButton
+              label="Privat"
+              selected={form.deliveryType === "privat"}
+              onClick={() => setForm((f) => ({ ...f, deliveryType: "privat" }))}
+            />
+            <BigChoiceButton
+              label="Als Gemeindemitarbeiter/in"
+              selected={form.deliveryType === "gemeinde"}
+              onClick={() => setForm((f) => ({ ...f, deliveryType: "gemeinde" }))}
+            />
+          </div>
+          <PrimaryButton onClick={goNext} disabled={!form.deliveryType}>
+            Weiter
+          </PrimaryButton>
+        </div>
+      )}
+
       {step === "bezirk" && (
         <div className="flex flex-col gap-4">
           <StepHeading>In welchem Bezirk sind Sie?</StepHeading>
@@ -196,9 +223,12 @@ export default function DeliveryWizard({
               />
             ))}
           </div>
-          <PrimaryButton onClick={goNext} disabled={!form.districtId}>
-            Weiter
-          </PrimaryButton>
+          <div className="flex flex-col gap-3">
+            <PrimaryButton onClick={goNext} disabled={!form.districtId}>
+              Weiter
+            </PrimaryButton>
+            <SecondaryButton onClick={goBack}>Zurück</SecondaryButton>
+          </div>
         </div>
       )}
 
@@ -363,6 +393,10 @@ export default function DeliveryWizard({
         <div className="flex flex-col gap-4">
           <StepHeading>Bitte prüfen</StepHeading>
           <dl className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 text-lg">
+            <Row
+              label="Anlieferer"
+              value={form.deliveryType ? formatDeliveryType(form.deliveryType) : "-"}
+            />
             <Row label="Bezirk" value={selectedDistrict?.name ?? "-"} />
             <Row label="Gemeinde" value={municipalityLabel || "-"} />
             <Row
